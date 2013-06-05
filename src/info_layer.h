@@ -23,6 +23,6 @@ void info_layer_set_font(InfoLayer *il, GFont info_font);
 void info_layer_set_text_color(InfoLayer *il, GColor color);
 void info_layer_set_background_color(InfoLayer *il, GColor color);
 void info_layer_init(InfoLayer *il, GRect frame);
-void update_info(InfoLayer* i, struct Data data);
+void display_counters(InfoLayer* i, struct Data data);
 
 #endif

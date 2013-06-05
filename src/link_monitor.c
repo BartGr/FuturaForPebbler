@@ -1,7 +1,6 @@
-#include "link_monitor.h"
 #include "config.h"
-	
-	
+#include "link_monitor.h"
+
 void link_monitor_ping() {
 	request_phone_state();
 }
@@ -25,7 +24,7 @@ void link_monitor_handle_success(struct Data* d)
 {
 	if(d->link_status == LinkStatusFailed)
 	{
-		const uint32_t seg[] = { 30};	
+		const uint32_t seg[] = { 30, 30, 30};	
 		VibePattern pattern = {.durations =  seg,.num_segments = ARRAY_LENGTH(seg)};
 		//Notify the user of reconnection
 		vibes_enqueue_custom_pattern(pattern);

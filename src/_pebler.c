@@ -36,125 +36,16 @@ PBL_APP_INFO(MY_UUID,
 #define DATE_FRAME      (GRect(1, 52, 144, 168-62))
 #define INFO_FRAME		(GRect(1, 70, 141, 24))
 
-Window window;          /* main window */
-TextLayer date_layer;   /* layer for the date */
-TimeLayer time_layer;   /* layer for the time */
-InfoLayer info_layer;   /* layer for phone info */
+Window window;          	/* main window */
+TextLayer date_layer;   	/* layer for the date */
+TimeLayer time_layer;   	/* layer for the time */
+WeatherLayer weather_layer;	/* weather ingo */
+InfoLayer info_layer;   	/* layer for phone info */
 
 GFont font_date;        /* font for date (normal) */
 GFont font_hour;        /* font for hour (bold) */
 GFont font_minute;      /* font for minute (thin) */
 GFont font_info;		/* font for phone info */
-
-//Weather Stuff
-WeatherLayer weather_layer;
-static int our_latitude, our_longitude;
-static bool located = false;
-
-void failed(int32_t cookie, int http_status, void* context) {
-	
-	info_layer_set_text(&info_layer, itoa(http_status));
-
-	if(cookie == 0 || cookie == WEATHER_HTTP_COOKIE) {
-		// just leave last data on the screen
-		//weather_layer_set_icon(&weather_layer, WEATHER_ICON_NO_WEATHER);
-		//text_layer_set_text(&weather_layer.temp_layer, "___°   ");
-	}
-
-	//Re-request the location and subsequently weather on next minute tick
-	located = false;
-	
-	// link moze byc ok, tylko netu moze nie byc (cachowanie!)
-	// link_monitor_handle_failure(http_status, &data);	
-	
-	data.link_status = LinkStatusFailed;
-	update_info(&info_layer, data);
-}
-
-void success(int32_t cookie, int http_status, DictionaryIterator* received, void* context) {
-
-	info_layer_set_text(&info_layer, itoa(http_status));
-
-	if(cookie != WEATHER_HTTP_COOKIE) return;
-	Tuple* icon_tuple = dict_find(received, WEATHER_KEY_ICON);
-	if(icon_tuple) {
-		int icon = icon_tuple->value->int8;
-		if(icon >= 0 && icon < 10) {
-			weather_layer_set_icon(&weather_layer, icon);
-		} else {
-			weather_layer_set_icon(&weather_layer, WEATHER_ICON_NO_WEATHER);
-		}
-	}
-	Tuple* temperature_tuple = dict_find(received, WEATHER_KEY_TEMPERATURE);
-	if(temperature_tuple) {
-		weather_layer_set_temperature(&weather_layer, temperature_tuple->value->int16);
-	}
-	
-	link_monitor_handle_success(&data);
-	update_info(&info_layer, data);
-}
-
-void location(float latitude, float longitude, float altitude, float accuracy, void* context) {
-	// Fix the floats
-	our_latitude = latitude * 10000;
-	our_longitude = longitude * 10000;
-	located = true;
-	request_weather();
-}
-
-void reconnect(void* context) {
-	located = false;
-	request_weather();
-}
-
-
-bool read_state_data(DictionaryIterator* received, struct Data* d, InfoLayer layer){
-	(void)d;
-	bool has_data = false;
-	Tuple* tuple = dict_read_first(received);
-	if(!tuple) return false;
-	do {
-			info_layer_set_text(&layer, itoa(tuple->key));
-			psleep(200);
-		switch(tuple->key) {
-	  		case TUPLE_MISSED_CALLS:
-				d->missed = tuple->value->uint8;
-				has_data = true;
-				break;
-			case TUPLE_UNREAD_SMS:
-				d->unread = tuple->value->uint8;
-				has_data = true;
-				break;
-		}
-	}
-	while((tuple = dict_read_next(received)));
-	return has_data;
-}
-
-void app_received_msg(DictionaryIterator* received, void* context) {	
-	link_monitor_handle_success(&data);
-	if(read_state_data(received, &data, info_layer)) update_info(&info_layer, data);
-}
-static void app_send_failed(DictionaryIterator* failed, AppMessageResult reason, void* context) {
-	link_monitor_handle_failure(reason, &data);
-	update_info(&info_layer, data);	
-}
-
-bool register_callbacks() {
-	if (callbacks_registered) {
-		if (app_message_deregister_callbacks(&app_callbacks) == APP_MSG_OK)
-			callbacks_registered = false;
-	}
-	if (!callbacks_registered) {
-		app_callbacks = (AppMessageCallbacksNode){
-			.callbacks = { .in_received = app_received_msg, .out_failed = app_send_failed} };
-		if (app_message_register_callbacks(&app_callbacks) == APP_MSG_OK) {
-      callbacks_registered = true;
-      }
-	}
-	return callbacks_registered;
-}
-
 
 int request_weather() {
 	int result=0;
@@ -181,33 +72,100 @@ int request_weather() {
 	return result;
 }
 
-/*
-void request_all() {
-	if(!located) {
-		http_location_request();
-		return;
+void failed(int32_t cookie, int http_status, void* context) {
+	if(cookie == 0 || cookie == WEATHER_HTTP_COOKIE) {
+		// just leave last data on the screen
+		//weather_layer_set_icon(&weather_layer, WEATHER_ICON_NO_WEATHER);
+		//text_layer_set_text(&weather_layer.temp_layer, "___°   ");
 	}
-	// Build the HTTP request
-	DictionaryIterator *body;
-	HTTPResult result = http_out_get("http://www.zone-mr.net/api/weather.php", WEATHER_HTTP_COOKIE, &body);
-	if(result != HTTP_OK) {
-		weather_layer_set_icon(&weather_layer, WEATHER_ICON_NO_WEATHER);
-		return;
+	//Re-request the location and subsequently weather on next minute tick
+	located = false;
+	// link may be fine, but phone can have no connection, so handle it in app_failed
+	// link_monitor_handle_failure(http_status, &data);	
+}
+
+void success(int32_t cookie, int http_status, DictionaryIterator* received, void* context) {
+	if(cookie != WEATHER_HTTP_COOKIE) return;
+	Tuple* icon_tuple = dict_find(received, WEATHER_KEY_ICON);
+	if(icon_tuple) {
+		int icon = icon_tuple->value->int8;
+		if(icon >= 0 && icon < 10) {
+			weather_layer_set_icon(&weather_layer, icon);
+		} else {
+			weather_layer_set_icon(&weather_layer, WEATHER_ICON_NO_WEATHER);
+		}
+	}
+	Tuple* temperature_tuple = dict_find(received, WEATHER_KEY_TEMPERATURE);
+	if(temperature_tuple) {
+		weather_layer_set_temperature(&weather_layer, temperature_tuple->value->int16);
 	}
 	
-	dict_write_int32(body,REQUEST_DATA_KEY, REQUEST_UNREAD | REQUEST_MISSED);
-	dict_write_int32(body, WEATHER_KEY_LATITUDE, our_latitude);
-	dict_write_int32(body, WEATHER_KEY_LONGITUDE, our_longitude);
-	dict_write_cstring(body, WEATHER_KEY_UNIT_SYSTEM, UNIT_SYSTEM);	
-	
-	// Send it.
-	result = http_out_send(); 
-	if(result != HTTP_OK) {
-		weather_layer_set_icon(&weather_layer, WEATHER_ICON_NO_WEATHER);
-		return;
+	link_monitor_handle_success(&data);
+	display_counters(&info_layer, data);
+}
+
+void location(float latitude, float longitude, float altitude, float accuracy, void* context) {
+	// Fix the floats
+	our_latitude = latitude * 10000;
+	our_longitude = longitude * 10000;
+	located = true;
+	request_weather();
+}
+
+void reconnect(void* context) {
+	located = false;
+	request_weather();
+}
+
+
+bool read_state_data(DictionaryIterator* received, struct Data* d, InfoLayer layer){
+	(void)d;
+	bool has_data = false;
+	Tuple* tuple = dict_read_first(received);
+	if(!tuple) return false;
+	do {
+		switch(tuple->key) {
+	  		case TUPLE_MISSED_CALLS:
+				d->missed = tuple->value->uint8;
+				has_data = true;
+				break;
+			case TUPLE_UNREAD_SMS:
+				d->unread = tuple->value->uint8;
+				has_data = true;
+				break;
+		}
+	}
+	while((tuple = dict_read_next(received)));
+	return has_data;
+}
+
+void app_received_msg(DictionaryIterator* received, void* context) {	
+	link_monitor_handle_success(&data);
+	if(read_state_data(received, &data, info_layer)) 
+	{
+		display_counters(&info_layer, data);
+		if(!located) request_weather();
 	}
 }
-*/
+static void app_send_failed(DictionaryIterator* failed, AppMessageResult reason, void* context) {
+	link_monitor_handle_failure(reason, &data);
+	display_counters(&info_layer, data);	
+}
+
+bool register_callbacks() {
+	if (callbacks_registered) {
+		if (app_message_deregister_callbacks(&app_callbacks) == APP_MSG_OK)
+			callbacks_registered = false;
+	}
+	if (!callbacks_registered) {
+		app_callbacks = (AppMessageCallbacksNode){
+			.callbacks = { .in_received = app_received_msg, .out_failed = app_send_failed} };
+		if (app_message_register_callbacks(&app_callbacks) == APP_MSG_OK) {
+      callbacks_registered = true;
+      }
+	}
+	return callbacks_registered;
+}
 
 /* Called by the OS once per minute. Update the time and date.
 */
@@ -253,16 +211,8 @@ void handle_minute_tick(AppContextRef ctx, PebbleTickEvent *t)
     string_format_time(minute_text, sizeof(minute_text), ":%M", t->tick_time);
     time_layer_set_text(&time_layer, hour_text, minute_text);
 	
-	if(data.link_status == LinkStatusUnknown) { 
-		// link_monitor_ping();
-		//psleep(200);
-		request_weather();
+	if(!(t->tick_time->tm_min % 2) || data.link_status == LinkStatusUnknown) link_monitor_ping();
 	}
-	else {
-		if(!located || !(t->tick_time->tm_min % 1)) request_weather();
-		// if(!(t->tick_time->tm_min % 1)) link_monitor_ping();
-	}
-}
 
 
 /* Initialize the application.
@@ -318,11 +268,13 @@ void handle_init(AppContextRef ctx)
 	layer_add_child(&window.layer, &info_layer.layer);
 	info_layer_set_text(&info_layer, "...");
 
-	// request data refresh on window appear (for example after notification)
-	// WindowHandlers handlers = { .appear = &link_monitor_ping };
-	// window_set_window_handlers(&window, handlers);
 	data.link_status = LinkStatusUnknown;
+	link_monitor_ping();
 
+	// request data refresh on window appear (for example after notification)
+	WindowHandlers handlers = { .appear = &link_monitor_ping};
+	window_set_window_handlers(&window, handlers);
+	
 	http_register_callbacks((HTTPCallbacks){.failure=failed,.success=success,.reconnect=reconnect,.location=location}, (void*)ctx);
 	register_callbacks();
 
@@ -331,7 +283,7 @@ void handle_init(AppContextRef ctx)
     t.tick_time = &tm;
     t.units_changed = SECOND_UNIT | MINUTE_UNIT | HOUR_UNIT | DAY_UNIT;
 	
-	handle_minute_tick(ctx, &t);	
+	handle_minute_tick(ctx, &t);
 }
 
 /* Shut down the application

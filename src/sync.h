@@ -4,8 +4,7 @@
 	
 #include "pebble_app.h"
 #include "pebble_os.h"
-#include "http.h"
-	
+
 	
 enum {
 	TUPLE_STATE = 0x100, // TUPLE_STRING		
@@ -31,12 +30,12 @@ static struct Data {
 	enum LinkStatus link_status;
 } data = {.info = "XXX calls, XXX sms. #00", .missed = 11, .unread=11};
 
+static int our_latitude, our_longitude;
+static bool located = false;
+
 static bool callbacks_registered;
 static AppMessageCallbacksNode app_callbacks;
 
 void request_phone_state();
-int request_weather();
-void request_all();
-//bool read_state_data(DictionaryIterator* received, struct Data* data, InfoLayer layer);
 
 #endif 

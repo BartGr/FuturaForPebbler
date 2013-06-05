@@ -1,29 +1,6 @@
 #include "pebble_os.h"
 #include "http.h"
 	
-	
-#define HTTP_URL_KEY 0xFFFF
-#define HTTP_STATUS_KEY 0xFFFE
-#define HTTP_COOKIE_KEY 0xFFFC
-#define HTTP_CONNECT_KEY 0xFFFB
-#define HTTP_USE_GET_KEY 0xFFFA
-	
-#define HTTP_APP_ID_KEY 0xFFF2
-#define HTTP_COOKIE_STORE_KEY 0xFFF0
-#define HTTP_COOKIE_LOAD_KEY 0xFFF1
-#define HTTP_COOKIE_FSYNC_KEY 0xFFF3
-#define HTTP_COOKIE_DELETE_KEY 0xFFF4
-	
-#define HTTP_TIME_KEY 0xFFF5
-#define HTTP_UTC_OFFSET_KEY 0xFFF6
-#define HTTP_IS_DST_KEY 0xFFF7
-#define HTTP_TZ_NAME_KEY 0xFFF8
-
-#define HTTP_LOCATION_KEY 0xFFE0
-#define HTTP_LATITUDE_KEY 0xFFE1
-#define HTTP_LONGITUDE_KEY 0xFFE2
-#define HTTP_ALTITUDE_KEY 0xFFE3
-
 static bool callbacks_registered;
 static AppMessageCallbacksNode app_callbacks;
 static HTTPCallbacks http_callbacks;
@@ -285,11 +262,6 @@ HTTPResult http_time_request() {
 HTTPResult http_location_request() {
 	DictionaryIterator *iter;
 	AppMessageResult app_result = app_message_out_get(&iter);
-	/*int counter = 20;
-	while(app_result == APP_MSG_BUSY && counter-->0) {
-		psleep(500);
-		app_result = app_message_out_get(&iter);
-	}*/
 	if(app_result != APP_MSG_OK) {
 		return app_result;
 	}
@@ -297,7 +269,6 @@ HTTPResult http_location_request() {
 	if(dict_result != DICT_OK) {
 		return dict_result << 12;
 	}
-	dict_write_int32(iter,REQUEST_DATA_KEY, REQUEST_MISSED | REQUEST_UNREAD) ; 
 	app_result = app_message_out_send();
 	app_message_out_release();
 	return app_result;

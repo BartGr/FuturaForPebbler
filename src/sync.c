@@ -1,6 +1,7 @@
 #include "sync.h"
+#include "http.h"
+	
 void request_phone_state() {
-	return;
   Tuplet value = TupletInteger(REQUEST_DATA_KEY, REQUEST_UNREAD | REQUEST_MISSED);
   DictionaryIterator *iter;
   app_message_out_get(&iter);
@@ -13,6 +14,3 @@ void request_phone_state() {
   app_message_out_release();
 }
 
-
-
-			

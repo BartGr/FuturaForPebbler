@@ -68,15 +68,10 @@ void info_layer_init(InfoLayer *il, GRect frame)
 	info_layer_set_text(il, "?");	
 }
 
-void update_info(InfoLayer* i, struct Data d) {
-
-	char* state = "XXX missed, XXX sms. #00";
-	
+void display_counters(InfoLayer* i, struct Data d) {
+	char* state = " XXX missed      XXX sms.   ";
 	if(d.link_status != LinkStatusOK){
 		strcpy(state, "?");
-		strcat(state, "  (");	
-		strcat(state, itoa(d.link_status));
-		strcat(state, " )");	
 	}
 	else {
 		strcpy(state, " ");
@@ -93,13 +88,6 @@ void update_info(InfoLayer* i, struct Data d) {
 			strcat(state, itoa(d.unread));
 			strcat(state, " sms");
 		}
-		/*if(d.missed||data.unread)  {
-			strcat(state, ".");
-		}*/
 	}
-
-//	strcat(state, "  #");	
-//	strcat(state, itoa(d.link_status));
-	
 	info_layer_set_text(i, state);
 }
