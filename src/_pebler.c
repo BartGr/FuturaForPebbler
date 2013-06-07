@@ -16,7 +16,7 @@
 
 
 PBL_APP_INFO(MY_UUID,
-             "Pebblers Futura", "Bartosz Grabowski",
+             "Pebblers Futura", "Bartosz Grabowski", // based on work by Martin Rosinski and Niknam"
              1, 61, /* App version */
              RESOURCE_ID_IMAGE_MENU_ICON,
              APP_INFO_WATCH_FACE);
