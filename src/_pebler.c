@@ -11,10 +11,12 @@
 #include "config.h"
 
 // #define MY_UUID { 0x91, 0x41, 0xB6, 0x28, 0xBC, 0x89, 0x49, 0x8E, 0xB1, 0x47, 0x04, 0x9F, 0x49, 0xC0, 0x99, 0xAD }
-#define MY_UUID {0x64, 0x8c, 0xcb, 0x50, 0xb6, 0x0c, 0x42, 0xea, 0x98, 0x3d, 0xae, 0x13, 0x01, 0x49, 0x2b, 0x08}
+#define MY_UUID {0xB8, 0x93, 0xF0, 0xA2, 0xE7, 0x22, 0x42, 0xEE, 0xA1, 0xFD, 0x05, 0x03, 0x4D, 0x63, 0x79, 0xBD}
+
+
 
 PBL_APP_INFO(MY_UUID,
-             "Futura Weather", "Martin Rosinski, Mod by Niknam",
+             "Pebblers Futura", "Bartosz Grabowski",
              1, 61, /* App version */
              RESOURCE_ID_IMAGE_MENU_ICON,
              APP_INFO_WATCH_FACE);
@@ -211,8 +213,9 @@ void handle_minute_tick(AppContextRef ctx, PebbleTickEvent *t)
     string_format_time(minute_text, sizeof(minute_text), ":%M", t->tick_time);
     time_layer_set_text(&time_layer, hour_text, minute_text);
 	
-	if(!(t->tick_time->tm_min % 2) || data.link_status == LinkStatusUnknown) link_monitor_ping();
-	}
+	if(!(t->tick_time->tm_min % 1) || data.link_status == LinkStatusUnknown) link_monitor_ping();
+	else if(!(t->tick_time->tm_min % 15)) request_weather();
+}
 
 
 /* Initialize the application.
